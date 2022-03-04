@@ -1,0 +1,93 @@
+---
+title: "Lab1"
+author: "Kata Mezo"
+date: "2/20/2022"
+output: html_document
+---
+## 1.	Develop a hypothesis about how some ego-network measure (e.g.,degree/size, density, diversity, average-level of alters, homophily, structural holes, or brokerage) may be related to some other variable of interest.
+
+In my lab 1, I am interested how one’s social network effects the individual trust in the press. My hypothesis is that if a person’s social network has higher education level on average, that will decrease their self-reported health level. 
+
+```{r}
+library(readr)
+gss_nets <- read_csv("Lab 1/GSS Data/gss-nets.csv")
+
+```
+
+## 2.	Explain why you think these two variables should be related. 
+
+When people have higher education level, they tend to focus on their own health more for example with reading more about health issues or just simple go to prevention checks. When ego is exposed to more educated people, those people can convince others to do the same things. Not to mention that highly educated people tend to have highly educated social network as well. Lower educated people tend to have a lower financial stability and less resources to take care of their health, therefore they are less focused on it, so they will not influence their network either to care about their own health.  
+
+
+## 3.	Tell me about your variables. What is your dependent variable? What are your independent variables? How are they coded? How are they recoded? How are the calculated, if appropriate?
+
+My lab report is using the GSS network dataset. My dependent variable is self recorded health level. It is part of survey series where the responder was asked to rate their own health from 1 to 4. First, I recoded the ‘health’ variable, so higher the value is the healthier the responder is. As the summary table shows, most people (44%) believed that their health is good, while 32% said their health is excellent. Lower then 6% said that their health level is poor, and only 18% said their health is fair. All together we can say, that more than two third of the people said their health at least good. 
+
+```{r}
+gss_nets$rhealth = 5-gss_nets$health
+table(gss_nets$rhealth)
+
+prop.table(table(gss_nets$rhealth))
+```
+
+
+The main independent variable of this lab report is the responder’s social network average education level. I have calculated it as the average age of each alter, that the responder named. As the table shows it below the age varies between 15 and 89. The mean of the average age is around 44, as well the median, therefore the distribution is very close to normal.
+
+```{r}
+educs = c("educ1", "educ2", "educ3", "educ4", "educ5")
+gss_nets$aveeduc=rowMeans(gss_nets[, educs ], na.rm=TRUE)
+summary(gss_nets$aveeduc)
+
+```
+
+
+## 4.	Present your initial results from your first few models. What do they indicated about your hypothesis?
+
+Model 1: Model 1 is the simplest model out of all the models, because it is not controlled for any other variables. Looking at the scatterplot, we can say, that if someone’s social network education level is higher, that will increase the health level generally. With other words, one level higher increase on one’s social circle’s average education, that will increase self-reported health with 0.11. All the variables are significant and positive in the model. According to the R-sq, the ‘aveeduc’ and ‘numgiven’ variables is responsible of 6% of the variance in one’s health level.
+
+```{r}
+plot1 <- lm(rhealth ~ aveeduc, data=gss_nets, offset = NULL, singular.ok = TRUE)
+plot(gss_nets$aveeduc, gss_nets$rhealth)
+abline(plot1)
+```
+```{r}
+summary(lm(rhealth ~ aveeduc + numgiven , data=gss_nets))
+
+```
+
+## 5.	Consider alternate specifications of your variables (i.e., recodings of various kinds). Consider interactions among your variables. 
+
+Model 2: 
+In the second model, I have controlled to the variable – satisfaction with financial situation. First, I needed to recode it so high the number more satisfied the individual is with their own financial situation (‘rsatfin’). The reason behind this, is that I expected a correlation between financial stability and one’s social network’s average education level. More educated people might have better jobs that can influence their network job situation as well. For example, they refer each other to their company, and connect someone to a better company.
+After including financial stability, all the variables remained statistically significant.  While social network’s average education level did not change too much (from 0.113 to 0.109), ‘rsatfin’ has a coefficient of 0.14. Meaning that if individual’s financial situation gets better with one level, that will cause a 0.14 increase in self-reported health on average. According to the R-sq, these three variables is responsible of 8% of the variance in one’s health level.
+
+```{r}
+
+#education level and satisfaction with financial situation
+gss_nets$rsatfin= 4-gss_nets$satfin
+table(gss_nets$rsatfin)
+prop.table(table(gss_nets$rsatfin))
+summary(lm(rhealth ~ aveeduc + numgiven + rsatfin, data=gss_nets))
+```
+
+
+Model 3: Once I have controlled with education level of the individuals, the average education level of the social network variable (‘aveeduc’) became less significant in the model. But the p-value is still less then 0.1. Meaning, that individual education level has a better effect on self-reported health than individual’s social network. Since the p-value is still under 0.1, it does not mean that this model necessarily rejects my hypothesis, but definitely shows less proof to accept it. 
+
+```{r}
+summary(lm(rhealth ~ aveeduc + numgiven + rsatfin +educ, data=gss_nets))
+```
+
+
+Model 4: 
+In my last model, I controlled for other variables that can influence individual’s health level such as marital status. Marital status is a categorical variable, where that 1 equals married, 2 is widowed, 3 is divorced, 4 is separated and 5 is never married. After including the dummy variables of the marital and left out the reference category (1), we can see that widowed and never married are the only significant ones in the model. While being a widow negatively effects one’s health level, being single (never married) positively effects it. 
+After controlling to the marital status, the significance level of one’s social network’s average education level became higher compared to model 3. Even the coefficient got bigger, but not too much, from 0.03 to 0.04. All these variables is responsible of 15.2% of the variance in one’s health level.
+
+
+```{r}
+summary(lm(rhealth ~ aveeduc + numgiven + rsatfin +educ +as.factor(marital), data=gss_nets))
+```
+
+## 6.	And give your best conclusion as to whether your initial hypothesis held up - and if not, why not. 
+
+The effect of a person’s social network’s education level on the person’s health level varied model by model. In my last model, ‘aveeduc’ remained statistically significant with a p-value lower than 0.05. According to that model, my hypothesis did not get rejected, and I can say that if someone is surrounded by higher educated people, it will increase the level of their health.
+
